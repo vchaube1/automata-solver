@@ -1,0 +1,4 @@
+initial Node 1 
+final Node 2 
+threshold 0.1 
+transition Node 1 Node 2 A 0.2 

@@ -1,0 +1,1 @@
+{"nodes":[{"id":"Node 1","x":400,"y":300},{"id":"Node 2","x":400,"y":300}],"links":[{"source":"Node 1","target":"Node 2","action":"A","probability":0.2}],"initialState":"Node 1","finalStates":["Node 2"],"probabilityThreshold":0.1}  
