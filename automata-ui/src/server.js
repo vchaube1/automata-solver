@@ -13,7 +13,7 @@ app.post('/api/automaton', (req, res) => {
     console.log('Received request');
     const automaton = req.body;
 
-    // Prepare the data to pass to the executable
+    // Prepare the data to pass to the Python script
     let inputData = `${automaton.initialState}\n`;
     inputData += `${automaton.finalStates.join(',')}\n`;
     inputData += `${parseFloat(automaton.probabilityThreshold)}\n`;
@@ -25,8 +25,8 @@ app.post('/api/automaton', (req, res) => {
     // Debugging: Log the input data
     console.log('Input Data:', inputData);
 
-    // Call the C++ executable with the input data
-    const reachability = spawn('./reachability.exe');
+    // Call the Python script with the input data
+    const reachability = spawn('python', ['reachability.py']);
 
     let output = '';
     reachability.stdout.on('data', (data) => {
@@ -45,7 +45,7 @@ app.post('/api/automaton', (req, res) => {
         }
     });
 
-    // Write the input data to the C++ executable's stdin
+    // Write the input data to the Python script's stdin
     reachability.stdin.write(inputData);
     reachability.stdin.end();
 });
