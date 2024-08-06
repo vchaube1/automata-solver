@@ -1,102 +1,75 @@
 import sys
-import numpy as np
+from collections import defaultdict
 
 def read_input():
-    input_data = sys.stdin.read().strip().split('\n')
-    initial_state = input_data[0].strip()
-    final_states = input_data[1].strip().split(',')
-    probability_threshold = float(input_data[2].strip())
-    transitions = [line.strip().split(',') for line in input_data[3:]]
+    initial_state = input().strip()
+    final_states = set(input().strip().split(','))
+    probability_threshold = float(input().strip())
+    
+    transitions = defaultdict(list)
+    for line in sys.stdin:
+        source, target, action, probability = line.strip().split(',')
+        transitions[source].append((target, action, float(probability)))
+    
     return initial_state, final_states, probability_threshold, transitions
 
-def build_transition_matrices(transitions, states):
-    n = len(states)
-    transition_matrices = {action: np.zeros((n, n)) for action in set(t[2] for t in transitions)}
+def create_graph(transitions):
+    graph = defaultdict(lambda: defaultdict(dict))
     
-    for src, tgt, action, prob in transitions:
-        i, j = states.index(src), states.index(tgt)
-        transition_matrices[action][i, j] = float(prob)
+    for source, trans_list in transitions.items():
+        outgoing_probs = defaultdict(float)
+        for target, action, prob in trans_list:
+            graph[source][target][action] = prob
+            outgoing_probs[action] += prob
         
-    return transition_matrices
+        # Add self-edges
+        for action, total_prob in outgoing_probs.items():
+            if total_prob < 1:
+                graph[source][source][action] = 1 - total_prob
+    
+    # Convert defaultdict to regular dict
+    return {s: dict(t) for s, t in graph.items()}
 
-import numpy as np
-
-def calculate_reachability(transition_matrices, initial_state, states):
-    n = len(states)
-    state_vector = np.zeros(n)
-    state_vector[states.index(initial_state)] = 1.0
-
-    state_vectors = [state_vector.copy()]
-    iteration = 0
-    last_nonzero_vector = state_vector.copy()  # Keep track of the last nonzero state vector
-
-    while True:
-        new_state_vector = np.zeros(n)
-        for action, matrix in transition_matrices.items():
-            new_state_vector += np.dot(state_vector, matrix)
-
-        if np.all(new_state_vector == 0) and np.any(last_nonzero_vector > 0):
-            # If new vector is all zeros but there was a previous nonzero vector, end iterations
-            state_vectors.append(last_nonzero_vector.copy())
-            break
-
-        if np.linalg.norm(new_state_vector - state_vector) < 1e-8 and iteration > 0:
-            # Convergence is confirmed
-            state_vectors.append(new_state_vector.copy())
-            break
-
-        state_vector = new_state_vector.copy()
-        if np.any(state_vector > 0):
-            last_nonzero_vector = state_vector.copy()  # Update the last known nonzero vector
-
-        state_vectors.append(state_vector.copy())
-
-        iteration += 1
-        # if iteration > 1000:  # Safeguard against infinite loops
-        #     print("Iteration limit reached. Potential non-convergence.")
-        #     break
-
-    return state_vectors
-
+def create_transition_matrices(transitions):
+    states = set()
+    actions = set()
+    for source, trans_list in transitions.items():
+        states.add(source)
+        for target, action, _ in trans_list:
+            states.add(target)
+            actions.add(action)
+    
+    states = sorted(states)
+    state_index = {state: i for i, state in enumerate(states)}
+    matrices = {action: [[0 for _ in states] for _ in states] for action in actions}
+    
+    for source, trans_list in transitions.items():
+        for target, action, prob in trans_list:
+            i, j = state_index[source], state_index[target]
+            matrices[action][i][j] = prob
+    
+    # Add self-loops to make matrices stochastic
+    for action in actions:
+        for i, state in enumerate(states):
+            row_sum = sum(matrices[action][i])
+            if row_sum < 1:
+                matrices[action][i][i] += 1 - row_sum
+    
+    return matrices
 
 def main():
     initial_state, final_states, probability_threshold, transitions = read_input()
+    graph = create_graph(transitions)
+    matrices = create_transition_matrices(transitions)
     
-    states = list(set([t[0] for t in transitions] + [t[1] for t in transitions]))
-    
-    transition_matrices = build_transition_matrices(transitions, states)
-    
-    state_vectors = calculate_reachability(transition_matrices, initial_state, states)
-    
-    # Check reachability
-    reachability = False
-    final_reachability_vector = state_vectors[-1]
-    for state in final_states:
-        if final_reachability_vector[states.index(state)] >= probability_threshold:
-            reachability = True
-            break
-    
-    # Print detailed logs
-    print("Reachability Analysis Logs:")
-    print(f"Initial State: {initial_state}")
-    print(f"Final States: {final_states}")
-    print(f"Probability Threshold: {probability_threshold}")
-    print(f"States: {states}")
-    print("Transitions:")
-    for src, tgt, action, prob in transitions:
-        print(f"  {src} --{action}/{prob}--> {tgt}")
-    print("\nState Probabilities at Each Step:")
-    
-    for i, vector in enumerate(state_vectors):
-        print(f"Step {i}:")
-        for j, state in enumerate(states):
-            print(f"  State {state}: {vector[j]}")
-    
-    print("\nReachability Result:")
-    if reachability:
-        print("SUCCESS: One or more final states are reachable with the given probability threshold.")
-    else:
-        print("FAILURE: No final states are reachable with the given probability threshold.")
+    print("Graph:")
+    print(graph)
+    print("\nTransition Matrices:")
+    for action, matrix in matrices.items():
+        print(f"Action {action}:")
+        for row in matrix:
+            print(row)
+        print()
 
 if __name__ == "__main__":
     main()
