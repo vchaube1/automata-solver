@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Graph } from 'react-d3-graph';
 import axios from 'axios';
+import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import './App.css';
+import InputAutomaton from './InputAutomaton';
 
 function App() {
     const [nodes, setNodes] = useState([]);
@@ -14,8 +16,8 @@ function App() {
     const addNode = () => {
         const newNode = {
             id: `Node ${nodes.length + 1}`,
-            x: 400, // Center of the graph horizontally
-            y: 300  // Center of the graph vertically
+            x: 400,
+            y: 300
         };
         setNodes([...nodes, newNode]);
     };
@@ -73,67 +75,86 @@ function App() {
     };
 
     return (
-        <div className="container">
-            <h1>Automaton Editor</h1>
-            <div>
-                <button onClick={addNode}>Add State</button>
-                <button onClick={addLink}>Add Transition</button>
-                <button onClick={sendAutomaton}>Send Automaton</button>
+        <Router>
+            <div className="container">
+                <h1>Probabilistic Automaton</h1>
+                <nav>
+                    <ul>
+                        <li>
+                            <Link to="/">Home</Link>
+                        </li>
+                        <li>
+                            <Link to="/quantum">Quantum Automaton</Link>
+                        </li>
+                    </ul>
+                </nav>
+                <Routes>
+                    <Route path="/" element={
+                        <>
+                            <div>
+                                <button onClick={addNode}>Add State</button>
+                                <button onClick={addLink}>Add Transition</button>
+                                <button onClick={sendAutomaton}>Send Automaton</button>
+                            </div>
+                            <div className="input-container">
+                                <label>
+                                    Initial State:
+                                    <input
+                                        type="text"
+                                        value={initialState}
+                                        onChange={(e) => setInitialState(e.target.value)}
+                                    />
+                                </label>
+                                <label>
+                                    Final States (comma separated):
+                                    <input
+                                        type="text"
+                                        value={finalStates}
+                                        onChange={(e) => setFinalStates(e.target.value)}
+                                    />
+                                </label>
+                                <label>
+                                    Probability Threshold:
+                                    <input
+                                        type="text"
+                                        value={probabilityThreshold}
+                                        onChange={(e) => setProbabilityThreshold(e.target.value)}
+                                    />
+                                </label>
+                            </div>
+                            <div className="graph-container">
+                                <Graph
+                                    id="graph-id"
+                                    data={graphData}
+                                    config={graphConfig}
+                                    onClickNode={handleNodeClick}
+                                />
+                            </div>
+                            <div className="link-list">
+                                {links.map((link, index) => (
+                                    <div key={index} className="link-item">
+                                        <span>{link.source} -> {link.target}</span>
+                                        <input
+                                            type="text"
+                                            placeholder="Action"
+                                            value={link.action}
+                                            onChange={(e) => updateLink(index, 'action', e.target.value)}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Probability"
+                                            value={link.probability}
+                                            onChange={(e) => updateLink(index, 'probability', e.target.value)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    } />
+                    <Route path="/quantum" element={<InputAutomaton />} />
+                </Routes>
             </div>
-            <div className="input-container">
-                <label>
-                    Initial State:
-                    <input
-                        type="text"
-                        value={initialState}
-                        onChange={(e) => setInitialState(e.target.value)}
-                    />
-                </label>
-                <label>
-                    Final States (comma separated):
-                    <input
-                        type="text"
-                        value={finalStates}
-                        onChange={(e) => setFinalStates(e.target.value)}
-                    />
-                </label>
-                <label>
-                    Probability Threshold:
-                    <input
-                        type="text"
-                        value={probabilityThreshold}
-                        onChange={(e) => setProbabilityThreshold(e.target.value)}
-                    />
-                </label>
-            </div>
-            <div className="graph-container">
-                <Graph
-                    id="graph-id"
-                    data={graphData}
-                    config={graphConfig}
-                    onClickNode={handleNodeClick}
-                />
-            </div>
-            <div className="link-list">
-                {links.map((link, index) => (
-                    <div key={index} className="link-item">
-                        <span>{link.source} -> {link.target}</span>
-                        <input
-                            type="text"
-                            placeholder="Action"
-                            value={link.action}
-                            onChange={(e) => updateLink(index, 'action', e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Probability"
-                            value={link.probability}
-                            onChange={(e) => updateLink(index, 'probability', e.target.value)}
-                        />
-                    </div>
-                ))}
-            </div>
-        </div>
+        </Router>
     );
 }
 

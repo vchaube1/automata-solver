@@ -65,7 +65,7 @@ import numpy as np
 
 def calculate_reachability(initial_state, final_states, threshold, graph, matrices, all_states):
     state_index = {state: i for i, state in enumerate(sorted(all_states))}
-    max_depth = 100  # Set a maximum recursion depth
+    max_depth = 10  # Set a maximum recursion depth
 
     def dfs(current_state, current_vector, depth):
         nonlocal reachable
